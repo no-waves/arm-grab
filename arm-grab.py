@@ -46,6 +46,7 @@ import oci
 import os
 from time import sleep
 import sys
+from datetime import datetime
 
 
 config = oci.config.from_file()
@@ -133,12 +134,19 @@ def safe_sleep(duration) -> None:
 
 
 def main():
+    log_path = r"./logs/faillog"
     instance_list = create_instance_list()
     while True:
         for i in instance_list:
             try:
                 response = compute_client.launch_instance(i)
                 print("FINALLY!!!!")
+                try:
+                    with open(r"./success.txt", "w+") as f:
+                        f.write(response)
+                except Exception as e:
+                    pass
+
                 sys.exit(0)
 
             except oci.exceptions.ServiceError as e:
@@ -152,11 +160,15 @@ def main():
                     ]
                 )
                 print(msg)
-                with open("faillog.txt", "a") as f:
+                with open(f"{log_path}.txt", "a+") as f:
+                    for line_number, line in enumerate(f, start=1):
+                        if len(line) > 1000:
+                            now = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+                            os.rename(f"{log_path}.txt", f"{log_path}_{now}.txt")
                     f.write(f"{msg}\n")
 
                 if err.status == 500:
-                    safe_sleep(4)
+                    safe_sleep(20)
                 else:
                     safe_sleep(60)
 
