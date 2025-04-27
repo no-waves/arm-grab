@@ -136,8 +136,14 @@ def safe_sleep(duration) -> None:
 def main():
     log_path = r"./logs/faillog"
     instance_list = create_instance_list()
+
+    print("waiting 60s to clear rate limit..")
+    sleep(60)
+    print("starting...")
+
     while True:
         for i in instance_list:
+
             try:
                 response = compute_client.launch_instance(i)
                 print("FINALLY!!!!")
@@ -168,13 +174,18 @@ def main():
                     f.write(f"{msg}\n")
 
                 if err.status == 500:
-                    safe_sleep(20)
+                    safe_sleep(6.5)
                 else:
-                    safe_sleep(60)
+                    sec = 120
+                    print(f"sleeping {sec}s...")
+                    safe_sleep(sec)
+                    print("retrying...")
 
             except KeyboardInterrupt:
                 print("\nctrl-c  --  exiting")
                 sys.exit(0)
+
+        safe_sleep(10)
 
 
 if __name__ == "__main__":
