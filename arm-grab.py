@@ -134,7 +134,7 @@ def safe_sleep(duration) -> None:
 
 
 def main():
-    log_path = r"./logs/faillog"
+    log_path = r"./logs/faillog.txt"
     instance_list = create_instance_list()
 
     print("waiting 60s to clear rate limit..")
@@ -166,11 +166,7 @@ def main():
                     ]
                 )
                 print(msg)
-                with open(f"{log_path}.txt", "a+") as f:
-                    for line_number, line in enumerate(f, start=1):
-                        if len(line) > 1000:
-                            now = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-                            os.rename(f"{log_path}.txt", f"{log_path}_{now}.txt")
+                with open(f"{log_path}", "a+") as f:
                     f.write(f"{msg}\n")
 
                 if err.status == 500:
@@ -180,6 +176,16 @@ def main():
                     print(f"sleeping {sec}s...")
                     safe_sleep(sec)
                     print("retrying...")
+
+            except oci.exceptions.RequestException as e:
+                with open(f"{log_path}", "a+") as f:
+                    f.write(f"Service time out\n")
+                print("Service time out")
+
+                sec = 300
+                print(f"sleeping {sec}s...")
+                safe_sleep(sec)
+                print("retrying...")
 
             except KeyboardInterrupt:
                 print("\nctrl-c  --  exiting")
