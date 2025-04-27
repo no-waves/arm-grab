@@ -156,7 +156,7 @@ def main():
                     f.write(f"{msg}\n")
 
                 if err.status == 500:
-                    safe_sleep(20)
+                    safe_sleep(4)
                 else:
                     safe_sleep(60)
 
