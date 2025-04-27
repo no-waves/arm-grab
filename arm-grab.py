@@ -46,7 +46,6 @@ import oci
 import os
 from time import sleep
 import sys
-from datetime import datetime
 
 
 config = oci.config.from_file()
