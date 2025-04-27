@@ -12,7 +12,7 @@ Modules:
 Functions:
     - create_instance_list() -> list[oci.core.models.LaunchInstanceDetails]:
         Creates a list of instance launch details for all availability domains in the compartment.
-    - safe_sleep(duration):
+    - safe_sleep(duration) -> None:
         Sleeps for the specified duration, handling interruptions gracefully.
 
 Key Variables:
@@ -37,7 +37,7 @@ Workflow:
     6. Log errors to a file and handle specific error codes with appropriate delays.
 
 Error Handling:
-    - Retries on service errors (e.g., HTTP 500) with a delay.
+    - Retries on service errors with a delay (20s on 500 codes, 60s if anything else).
     - Logs error details to a file named "faillog.txt".
     - Gracefully exits on keyboard interruption (Ctrl+C).
 """
@@ -96,6 +96,7 @@ IMAGE_ID = sorted(ubuntu_list, key=lambda x: x.time_created, reverse=True)[0].id
 
 
 def create_instance_list() -> list[oci.core.models.LaunchInstanceDetails]:
+    """Create a list of instance detail objects to iterate over while trying to snag one of these"""
     instance_list = []
 
     for i in AD_NAMES:
@@ -122,7 +123,8 @@ def create_instance_list() -> list[oci.core.models.LaunchInstanceDetails]:
     return instance_list
 
 
-def safe_sleep(duration):
+def safe_sleep(duration) -> None:
+    """Using this to sleep and allow graceful keyboard interrupts without dumping errors to terminal"""
     try:
         sleep(duration)
     except KeyboardInterrupt:
