@@ -46,6 +46,7 @@ import oci
 import os
 from time import sleep
 import sys
+from random import randint
 
 
 config = oci.config.from_file()
@@ -95,6 +96,20 @@ for img in image_list:
 IMAGE_ID = sorted(ubuntu_list, key=lambda x: x.time_created, reverse=True)[0].id
 
 
+def check_existing_instances(log_path: str) -> None:
+    """Check existing instances for VM.Standard.A1.Flex. Exit if one is found."""
+
+    print(f"Checking for existing {SHAPE_NAME} instances...")
+    instances = compute_client.list_instances(compartment_id=COMPARTMENT_ID).data
+    if SHAPE_NAME in [i.shape for i in instances]:
+        with open(f"{log_path}", "a+") as f:
+            f.write(f"{SHAPE_NAME} instance already exists!!\n")
+        print(f"{SHAPE_NAME} instance already exists!!\nExiting...")
+        sys.exit(0)
+    else:
+        print("None found, continuing...")
+
+
 def create_instance_list() -> list[oci.core.models.LaunchInstanceDetails]:
     """Create a list of instance detail objects to iterate over while trying to snag one of these"""
     instance_list = []
@@ -134,14 +149,17 @@ def safe_sleep(duration) -> None:
 
 def main():
     log_path = r"./logs/faillog.txt"
+    check_existing_instances(log_path=log_path)
+
     instance_list = create_instance_list()
 
     print("waiting 60s to clear rate limit..")
-    sleep(60)
+    safe_sleep(60)
     print("starting...")
 
     while True:
         for i in instance_list:
+            safe_sleep(randint(1, 5))
 
             try:
                 response = compute_client.launch_instance(i)
@@ -169,20 +187,23 @@ def main():
                     f.write(f"{msg}\n")
 
                 if err.status == 500:
-                    safe_sleep(6.5)
-                else:
-                    sec = 120
-                    print(f"sleeping {sec}s...")
+                    safe_sleep(7)
+
+                elif err.status == 429:
+                    sec = 180
+                    print(f"Rate limited. Sleeping {sec}s...")
                     safe_sleep(sec)
                     print("retrying...")
+
+                else:
+                    raise e
 
             except oci.exceptions.RequestException as e:
                 with open(f"{log_path}", "a+") as f:
                     f.write(f"Service time out\n")
-                print("Service time out")
 
-                sec = 300
-                print(f"sleeping {sec}s...")
+                sec = randint(295, 305)
+                print(f"Service time out. Sleeping {sec}s...")
                 safe_sleep(sec)
                 print("retrying...")
 
@@ -190,7 +211,7 @@ def main():
                 print("\nctrl-c  --  exiting")
                 sys.exit(0)
 
-        safe_sleep(10)
+        safe_sleep(randint(8, 12))
 
 
 if __name__ == "__main__":
