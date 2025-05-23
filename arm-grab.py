@@ -195,6 +195,12 @@ def main():
                     safe_sleep(sec)
                     print("retrying...")
 
+                elif err.status == 502:
+                    sec = 300
+                    print(f"502 Bad gateway. Sleeping {sec}s...")
+                    safe_sleep(sec)
+                    print("retrying...")
+
                 else:
                     raise e
 
